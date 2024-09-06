@@ -112,7 +112,7 @@
          try {
            // Fetch the list of DEs
            const result = await customFetch(url, body);
-           console.log('Data received:', result);
+           // console.log('Data received:', result);
  
            let totalRequests = result.length; 
            let completedRequests = 0;
@@ -128,7 +128,7 @@
              try {
                // Await the result of each customFetch
                const searchResult = await customFetch(url, searchDEBody);
-               console.log('Search Result:', searchResult);
+               // console.log('Search Result:', searchResult);
  
                if (searchResult?.htmlTable) {
                  $('.output').append(searchResult.htmlTable);
