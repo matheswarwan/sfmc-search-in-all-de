@@ -1,0 +1,236 @@
+
+<script runat="server">
+
+    Platform.Load("core", "1");
+    var api = new Script.Util.WSProxy();
+  
+    var resp; 
+	
+	try {
+       
+        var postData = Platform.Request.GetPostData();
+        var reqPayload = Platform.Function.ParseJSON(postData);
+
+        if(reqPayload.method == 'getDE') { 
+            resp = getDEList();
+        }else if(reqPayload.method == 'searchDE') {
+            var deFields = getDEFields(reqPayload.de);
+            var searchString = reqPayload.searchString;
+            var complexFilter = createComplexFilter(deFields, searchString);
+            // Write('<br> complexFilter' + Stringify(complexFilter))
+            // Write('<br> reqPayload.key' + Stringify(reqPayload.key))
+            
+            var de = DataExtension.Init(reqPayload.de.key);
+            var deResult = de.Rows.Retrieve(complexFilter);
+
+            if(deResult.length > 0) { 
+                var htmlTable = PrintTable(reqPayload.de.name, deResult);
+            }
+
+            resp = {
+                htmlTable: htmlTable
+            };
+        }
+
+        Write(Stringify(resp));
+
+        // if(searchString.length < 1 || searchString == null) {
+        //     throw "No search string provided";
+        // } else { 
+        //     // Main function 
+        //     var deList = getDEList();
+        //     // for(var d in deList){
+        //     for(var d = 0; d < 60 ; d++){
+
+        //         var deFields = getDEFields(deList[d]);
+
+        //         var complexFilter = createComplexFilter(deFields, searchString);
+
+        //         var de = DataExtension.Init(deList[d].key);
+        //         var deResult = de.Rows.Retrieve(complexFilter);
+
+        //         if(deResult.length > 0) { 
+        //             var htmlTable = PrintTable(deList[d].name, deResult);
+        //             Write(htmlTable);
+        //         }
+        //     }
+        // }
+
+        function getDEList() {
+            var cols = ["Name", "CustomerKey"];
+
+            var filter = {
+                Property: "CustomerKey",
+                SimpleOperator: "isNotNull",
+                Value: " "
+            };
+
+            var opts = {
+                BatchSize: 300
+            };
+
+            var props = {
+                QueryAllAccounts: false
+            };
+
+            var deList = [],
+                moreData = true,
+                reqID = data = null;
+
+            while(moreData) {
+
+                moreData = false;
+
+                if(reqID) props.ContinueRequest = reqID;
+
+                var req = api.retrieve("DataExtension", cols, filter, opts, props);
+
+                if (req) {
+
+                    moreData = req.HasMoreRows;
+                    reqID = req.RequestID;
+
+                    var results = req.Results;
+
+                    for (var k in results) {
+                        var name = results[k].Name;
+                        var key = results[k].CustomerKey;
+                        if (name.indexOf("_") != 0 && name.toLowerCase().indexOf('log') == -1) {
+                            var t = {
+                                name: name,
+                                key: key
+                            }
+                            deList.push(t);
+                        }
+                    }
+
+                }
+            }
+
+            // Write('<br> deList : ' + Stringify(deList));
+            return deList;
+        }
+		
+
+        function getDEFields(de) { 
+            var cols = [
+                "Name", 
+                "MaxLength", 
+                "IsRequired", 
+                "FieldType", 
+                "DefaultValue", 
+                "Ordinal"
+            ];
+            var result = api.retrieve("DataExtensionField", cols, {
+                Property: "DataExtension.CustomerKey",
+                SimpleOperator: "equals",
+                Value: de.key
+            });
+            return result.Results;
+        }
+
+        function createComplexFilter(data, searchString) {
+            // Filter the input array by FieldType == "Text"
+            var filteredData = [];
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].FieldType === "Text") {
+                    filteredData.push(data[i]);
+                }
+            }
+
+            // Split the filtered data into two halves
+            var midpoint = Math.floor(filteredData.length / 2);
+            var leftFilters = filteredData.slice(0, midpoint);
+            var rightFilters = filteredData.slice(midpoint);
+
+            // Function to build nested filters with OR operators
+            function buildOrFilter(filters) {
+                if (filters.length === 0) {
+                    return null;
+                }
+                if (filters.length === 1) {
+                    return {
+                        Property: filters[0].Name,
+                        SimpleOperator: "like",
+                        Value: "%" + searchString + "%"
+                    };
+                }
+
+                var result = {
+                    LeftOperand: {
+                        Property: filters[0].Name,
+                        SimpleOperator: "like",
+                        Value: "%" + searchString + "%"
+                    },
+                    LogicalOperator: "OR",
+                    RightOperand: {
+                        Property: filters[1].Name,
+                        SimpleOperator: "like",
+                        Value: "%" + searchString + "%"
+                    }
+                };
+
+                for (var i = 2; i < filters.length; i++) {
+                    result = {
+                        LeftOperand: result,
+                        LogicalOperator: "OR",
+                        RightOperand: {
+                            Property: filters[i].Name,
+                            SimpleOperator: "like",
+                            Value: "%" + searchString + "%"
+                        }
+                    };
+                }
+
+                return result;
+            }
+
+            // Create the complex filter object
+            var complexFilter = {
+                LeftOperand: buildOrFilter(leftFilters),
+                LogicalOperator: "OR",
+                RightOperand: buildOrFilter(rightFilters)
+            };
+
+            return complexFilter;
+        }
+
+        function PrintTable(deName, deResult) {
+            var htmlTable = "<b> DE Name: " + deName + "</b><br><br>";
+            htmlTable += "Note: This shows only top 10 rows <br>";
+            htmlTable += "<table border='1' cellpadding='5' cellspacing='0'>";
+            htmlTable += "<thead><tr>";
+
+            for (var key in deResult[0]) {
+                htmlTable += "<th>" + key + "</th>";
+            }
+            htmlTable += "</tr></thead><tbody>";
+
+            // for (var i = 0; i < deResult.length; i++) {
+            for (var i = 0; i < 10; i++) {
+                htmlTable += "<tr>";
+                for (var key in deResult[i]) {
+                    htmlTable += "<td>" + deResult[i][key] + "</td>";
+                }
+                htmlTable += "</tr>";
+            }
+
+            htmlTable += "</tbody></table>";
+
+            return htmlTable;
+
+        }
+
+
+
+    
+
+        
+	} catch(error) {
+        var resp = {
+            "htmlTable": null
+        };
+        Write( Stringify(resp));
+    }	
+
+</script>
