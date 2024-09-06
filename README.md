@@ -7,6 +7,6 @@ Search for a text string in all available Data Extensions and fields of type tex
 3. Open the landing page 
 
 ## Future enhancments 
-[x] Make it async 
-[x] Add form 
-3. Add support to other field types (date, decimal)
+- [x] Make it async 
+- [x] Add form 
+- [] Add support to other field types (date, decimal)
