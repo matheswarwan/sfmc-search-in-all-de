@@ -93,8 +93,9 @@
      <script>
        $('.submit').on('click', async function () {
          let url =  '<TODO: REPLACE WITH YOUR API URL>';
-         let searchString = $('#searchString').val();
- 
+         let searchString = $('#searchString').val().trim();
+         searchString = searchString.replace(/[\t\n\r]+/g, ''); 
+        
          if (searchString.length < 1) {
            $('.output').html('<div class="alert alert-danger">No search string entered.</div>');
            return;
