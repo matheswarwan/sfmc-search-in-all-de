@@ -114,7 +114,7 @@
         function createComplexFilter(data, searchString) {
             var filteredData = [];
             for (var i = 0; i < data.length; i++) {
-                if (data[i].FieldType === "Text") {
+                if (data[i].FieldType === "Text" || data[i].FieldType === "EmailAddress" || data[i].FieldType === "Number") {
                     filteredData.push(data[i]);
                 }
             }
