@@ -1,13 +1,10 @@
-
 <script runat="server">
 
     Platform.Load("core", "1");
     var api = new Script.Util.WSProxy();
-  
     var resp; 
 	
 	try {
-       
         var postData = Platform.Request.GetPostData();
         var reqPayload = Platform.Function.ParseJSON(postData);
 
@@ -17,9 +14,6 @@
             var deFields = getDEFields(reqPayload.de);
             var searchString = reqPayload.searchString;
             var complexFilter = createComplexFilter(deFields, searchString);
-            // Write('<br> complexFilter' + Stringify(complexFilter))
-            // Write('<br> reqPayload.key' + Stringify(reqPayload.key))
-            
             var de = DataExtension.Init(reqPayload.de.key);
             var deResult = de.Rows.Retrieve(complexFilter);
 
@@ -34,27 +28,15 @@
 
         Write(Stringify(resp));
 
-        // if(searchString.length < 1 || searchString == null) {
-        //     throw "No search string provided";
-        // } else { 
-        //     // Main function 
-        //     var deList = getDEList();
-        //     // for(var d in deList){
-        //     for(var d = 0; d < 60 ; d++){
-
-        //         var deFields = getDEFields(deList[d]);
-
-        //         var complexFilter = createComplexFilter(deFields, searchString);
-
-        //         var de = DataExtension.Init(deList[d].key);
-        //         var deResult = de.Rows.Retrieve(complexFilter);
-
-        //         if(deResult.length > 0) { 
-        //             var htmlTable = PrintTable(deList[d].name, deResult);
-        //             Write(htmlTable);
-        //         }
-        //     }
-        // }
+        function isValidDEToSearch(deName) { 
+            var exclusionList = ["QueryStudioResults", "log", "ExpressionBuilderAttributes", "IGO_PROFILES", "IGO_VIEWS", "PI_SESSION_ENDS", "IGO_PURCHASES", "IGO_PRODUCTS", "IGO_PRODUCTATTRIBS", "PI_CONTENTVIEWS", "PI_CONTENT", "PI_CONTENTATTRIBS", "PI_SESSIONS", "Einstein_MC_Predictive_Scores", "PI_ABANDONED_CART_EVENT", "PI_ABANDONED_CART_ITEMS" ];
+            for (var i = 0; i < exclusionList.length; i++) {
+                if (deName.toLowerCase().indexOf(exclusionList[i].toLowerCase()) !== -1) {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         function getDEList() {
             var cols = ["Name", "CustomerKey"];
@@ -95,7 +77,8 @@
                     for (var k in results) {
                         var name = results[k].Name;
                         var key = results[k].CustomerKey;
-                        if (name.indexOf("_") != 0 && name.toLowerCase().indexOf('log') == -1) {
+                        if (name.indexOf("_") != 0 
+                        && isValidDEToSearch(name)) {
                             var t = {
                                 name: name,
                                 key: key
@@ -107,7 +90,6 @@
                 }
             }
 
-            // Write('<br> deList : ' + Stringify(deList));
             return deList;
         }
 		
@@ -130,7 +112,6 @@
         }
 
         function createComplexFilter(data, searchString) {
-            // Filter the input array by FieldType == "Text"
             var filteredData = [];
             for (var i = 0; i < data.length; i++) {
                 if (data[i].FieldType === "Text") {
@@ -138,12 +119,10 @@
                 }
             }
 
-            // Split the filtered data into two halves
             var midpoint = Math.floor(filteredData.length / 2);
             var leftFilters = filteredData.slice(0, midpoint);
             var rightFilters = filteredData.slice(midpoint);
 
-            // Function to build nested filters with OR operators
             function buildOrFilter(filters) {
                 if (filters.length === 0) {
                     return null;
@@ -185,7 +164,6 @@
                 return result;
             }
 
-            // Create the complex filter object
             var complexFilter = {
                 LeftOperand: buildOrFilter(leftFilters),
                 LogicalOperator: "OR",
@@ -206,7 +184,7 @@
             }
             htmlTable += "</tr></thead><tbody>";
 
-            // for (var i = 0; i < deResult.length; i++) {
+            // for (var i = 0; i < deResult.length; i++) { // Enable this to get upto 2500 records
             for (var i = 0; i < 10; i++) {
                 htmlTable += "<tr>";
                 for (var key in deResult[i]) {
@@ -214,23 +192,13 @@
                 }
                 htmlTable += "</tr>";
             }
-
             htmlTable += "</tbody></table>";
-
             return htmlTable;
-
-        }
-
-
-
-    
-
-        
+        }        
 	} catch(error) {
         var resp = {
             "htmlTable": null
         };
         Write( Stringify(resp));
-    }	
-
+    }
 </script>
