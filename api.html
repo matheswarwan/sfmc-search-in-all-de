@@ -173,6 +173,11 @@
             return complexFilter;
         }
 
+	function escapeHTML(input) {
+            var output = input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return output;
+        }
+		
         function PrintTable(deName, deResult) {
             var htmlTable = "<b> DE Name: " + deName + "</b><br><br>";
             htmlTable += "Note: This shows only top 10 rows <br>";
@@ -185,10 +190,11 @@
             htmlTable += "</tr></thead><tbody>";
 
             // for (var i = 0; i < deResult.length; i++) { // Enable this to get upto 2500 records
-            for (var i = 0; i < 10; i++) {
+            var len = (deResult.length > 10 ? 10: deResult.length)
+            for (var i = 0; i < len; i++) {
                 htmlTable += "<tr>";
                 for (var key in deResult[i]) {
-                    htmlTable += "<td>" + deResult[i][key] + "</td>";
+                    htmlTable += "<td>" + escapeHTML(deResult[i][key]) + "</td>";
                 }
                 htmlTable += "</tr>";
             }
