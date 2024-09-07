@@ -2,10 +2,9 @@
 Search for a text string in all available Data Extensions and fields of type text
 
 ## How to use? 
-1. Set the string to search in variable searchString
-2. Update the url value in html
-3. Deploy the code & api in a landing page
-4. Open the landing page 
+1. deploy api.html as code snippet and get the url
+2. Update the url value in index.html and deloy this as a landing page
+3. Open the landing page and search for a string
 
     Note: These DEs will not be searched. Part of function - isValidDEToSearch.
 
